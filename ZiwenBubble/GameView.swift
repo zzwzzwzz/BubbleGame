@@ -172,7 +172,7 @@ struct GameView: View {
 			
 			// Show combo count if applicable
 			if viewModel.comboCount > 1 {
-				Text("Combo: \(viewModel.comboCount)x")
+				Text("Combo: x1.5")
 					.font(.title3)
 					.fontWeight(.bold)
 					.foregroundColor(.orange)
@@ -193,9 +193,9 @@ struct GameView: View {
 					showPauseMenu = false
 				}
 			}) {
-				Image(systemName: "arrow.clockwise.circle.fill")
+				Image(systemName: "arrow.right.circle.fill")
 					.font(.system(size: 36))
-					.foregroundColor(.gray)
+					.foregroundColor(.orange)
 			}
 		}
 		.padding()

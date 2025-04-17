@@ -175,7 +175,7 @@ class GameViewModel: ObservableObject {
 			// Check for overlaps with existing bubbles
 			if !bubbles.contains(where: { newBubble.overlaps(with: $0, inBounds: screenBounds) }) {
 				bubbles.append(newBubble)
-				break
+				return
 			}
 		}
 	}
@@ -263,27 +263,43 @@ class GameViewModel: ObservableObject {
 	
 	// Bubble Movement
 	private func updateBubblePositions() {
-		// Calculate time since last update
-		let timeElapsed = 0.016 // Approximately 60fps
-		
-		// Update bubble positions
-		for i in 0..<bubbles.count {
-			// Skip bubbles that are being animated for removal
-			if animatingBubbles[bubbles[i].id] == true {
-				continue
-			}
-			
-			// Move the bubble
-			bubbles[i].move(bounds: screenBounds, timeElapsed: timeElapsed)
-			
-			// Check if bubble is out of bounds
-			if !bubbles[i].isInBounds(screenBounds) {
-				// Remove the bubble if it's out of bounds
-				bubbles.remove(at: i)
-				break
-			}
-		}
-	}
+    // Calculate time since last update
+    let timeElapsed = 0.016 // Approximately 60fps
+    
+    // Calculate speed factor based on remaining time
+    let speedFactor = 1.0 + Double(settings.gameTime - timeRemaining) / Double(settings.gameTime) * 2.0
+    
+    // Update bubble positions
+    for i in 0..<bubbles.count {
+        // Skip bubbles that are being animated for removal
+        if animatingBubbles[bubbles[i].id] == true {
+            continue
+        }
+        
+        // Apply speed factor to movement
+        let adjustedVelocity = CGVector(
+            dx: bubbles[i].velocity.dx * speedFactor,
+            dy: bubbles[i].velocity.dy * speedFactor
+        )
+        
+        // Update position with adjusted velocity
+        bubbles[i].position.x += CGFloat(adjustedVelocity.dx * timeElapsed)
+        bubbles[i].position.y += CGFloat(adjustedVelocity.dy * timeElapsed)
+        
+        // Check if bubble is out of bounds
+        let radius = bubbles[i].size / 2
+        let isOutOfBounds = bubbles[i].position.x < -radius || 
+                           bubbles[i].position.x > screenBounds.width + radius ||
+                           bubbles[i].position.y < -radius || 
+                           bubbles[i].position.y > screenBounds.height + radius
+        
+        if isOutOfBounds {
+            // Remove the bubble if out of bounds
+            bubbles.remove(at: i)
+            break
+        }
+    }
+}
 	
 	// Utility Methods
 	func updateScreenBounds(_ bounds: CGRect) {
