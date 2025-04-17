@@ -49,12 +49,15 @@ struct GameView: View {
                 pauseMenu
             }
             
-            // Game Over (High Scores)
-            if showHighScores {
-                HighScoreView()
-                    .transition(.opacity)
-                    .zIndex(3)
-            }
+            // Game Over
+			if showHighScores {
+				HighScoreView(
+					currentPlayerName: settingsViewModel.playerName,
+					currentScore: viewModel.score
+				)
+				.transition(.opacity)
+				.zIndex(3)
+			}
         }
 		.navigationBarHidden(true)
 		.onAppear {
@@ -76,30 +79,41 @@ struct GameView: View {
                 // Game area
 				Color.blue.opacity(0.05).edgesIgnoringSafeArea(.all)
                 
-                // Game state dependent views
-                ZStack {
-                    // Bubble game area
-                    if viewModel.gameState == .playing || viewModel.gameState == .paused {
-                        bubbleGameArea(viewModel, size: geometry.size)
-                    }
-                    
-                    // Starting countdown
-                    if viewModel.gameState == .starting {
-                        countdownView(viewModel)
-                    }
-                }
-                
-                // Game controls overlay
-                VStack {
-                    // Top bar with score and time
-                    gameInfoBar(viewModel)
-                    
-                    Spacer()
-                    
-                    // Bottom controls
-                    gameControlBar(viewModel)
-                }
-                .padding()
+				// Show different views based on game state
+				if viewModel.shouldShowHighScores {
+					// Show high scores when game is finished
+					HighScoreView(currentPlayerName: settingsViewModel.playerName, currentScore: viewModel.score)
+						.transition(.opacity)
+						.onDisappear {
+							// Reset when high scores view is dismissed
+							viewModel.shouldShowHighScores = false
+						}
+				} else {
+					// Game state dependent views
+					ZStack {
+						// Bubble game area
+						if viewModel.gameState == .playing || viewModel.gameState == .paused {
+							bubbleGameArea(viewModel, size: geometry.size)
+						}
+						
+						// Starting countdown
+						if viewModel.gameState == .starting {
+							countdownView(viewModel)
+						}
+						
+						// Game controls overlay
+						VStack {
+							// Top bar with score and time
+							gameInfoBar(viewModel)
+							
+							Spacer()
+							
+							// Bottom controls
+							gameControlBar(viewModel)
+						}
+						.padding()
+					}
+				}
             }
             .onAppear {
                 viewModel.updateScreenBounds(geometry.frame(in: .local))

@@ -19,6 +19,7 @@ class GameViewModel: ObservableObject {
 	@Published var comboCount: Int = 0
 	@Published var highestScore: Int = 0
 	@Published var countdownValue: Int = 3
+	@Published var shouldShowHighScores: Bool = false
 
 	private var settings: SettingsModel
 	private var timer: Timer?
@@ -48,6 +49,7 @@ class GameViewModel: ObservableObject {
 	func startGame() {
 		// Reset game state
 		resetGame()
+		shouldShowHighScores = false
 		
 		// Show countdown animation
 		gameState = .starting
@@ -105,6 +107,9 @@ class GameViewModel: ObservableObject {
 		
 		scoreManager.saveScore(newScore)
 		highestScore = scoreManager.getHighestScore()
+		
+		// High scores should be shown
+		shouldShowHighScores = true
 	}
 	
 	func resetGame() {
@@ -115,9 +120,13 @@ class GameViewModel: ObservableObject {
 		lastPoppedColor = nil
 		comboCount = 0
 		difficultyFactor = 1.0
+		shouldShowHighScores = false
 		
 		// Stop all timers
 		stopTimers()
+		
+		// Reset game state
+		gameState = .setup
 	}
 	
 	// Bubble Management Methods

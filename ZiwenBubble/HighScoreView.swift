@@ -14,6 +14,16 @@ struct HighScoreView: View {
 	@Environment(\.presentationMode) var presentationMode
 	private let scoreManager = ScoreManager()
 	
+	// Current player info
+	var currentPlayerName: String?
+	var currentScore: Int?
+	
+	// Initialize with optional parameters
+	init(currentPlayerName: String? = nil, currentScore: Int? = nil) {
+		self.currentPlayerName = currentPlayerName
+		self.currentScore = currentScore
+	}
+	
 	// Body
 	var body: some View {
 		ZStack {
@@ -25,6 +35,13 @@ struct HighScoreView: View {
 					.font(.system(size: 36, weight: .bold))
 					.foregroundColor(.black)
 					.padding(.top, 20)
+				
+				if currentPlayerName != nil && currentScore != nil {
+					Text("You scored: \(currentScore!) points")
+						.font(.title2)
+						.foregroundColor(.black)
+						.padding(.top, 5)
+				}
 				
 				// Scores list
 				if scores.isEmpty {
@@ -42,7 +59,7 @@ struct HighScoreView: View {
 					Button(action: {
 						presentationMode.wrappedValue.dismiss()
 					}) {
-						Text("Back")
+						Text("Menu")
 							.font(.title2)
 							.foregroundColor(.white)
 							.padding(.horizontal, 30)
@@ -100,7 +117,7 @@ struct HighScoreView: View {
 				
 				// Score rows
 				ForEach(Array(scores.enumerated()), id: \.element.id) { index, score in
-					ScoreRowView(rank: index + 1, score: score, isAnimating: isAnimating)
+					ScoreRowView(rank: index + 1, score: score, isAnimating: isAnimating, isCurrentPlayer: isCurrentPlayerScore(score))
 						.transition(.scale)
 						.animation(
 							.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0)
@@ -133,6 +150,13 @@ struct HighScoreView: View {
 			}
 		}
 	}
+	
+	private func isCurrentPlayerScore(_ score: GameScore) -> Bool {
+		guard let currentName = currentPlayerName,
+			  let currentScore = currentScore else { return false }
+		
+		return score.playerName == currentName && score.score == currentScore
+	}
 }
 
 // Score Row View
@@ -140,25 +164,29 @@ struct ScoreRowView: View {
 	let rank: Int
 	let score: GameScore
 	let isAnimating: Bool
+	let isCurrentPlayer: Bool
 	
 	var body: some View {
 		HStack {
 			// Rank
 			Text("\(rank)")
 				.font(.system(size: 18))
-				.foregroundColor(rankColor)
+				.foregroundColor(isCurrentPlayer ? .white : rankColor)
+				.fontWeight(isCurrentPlayer ? .bold : .regular)
 				.frame(width: 60, alignment: .center)
 			
 			// Player name
 			Text(score.playerName)
 				.font(.system(size: 18))
-				.foregroundColor(rankColor)
+				.fontWeight(isCurrentPlayer ? .bold : .regular)
+				.foregroundColor(isCurrentPlayer ? .white : rankColor)
 				.frame(maxWidth: .infinity, alignment: .leading)
 			
 			// Score
 			Text("\(score.score)")
 				.font(.system(size: 18))
-				.foregroundColor(rankColor)
+				.fontWeight(isCurrentPlayer ? .bold : .regular)
+				.foregroundColor(isCurrentPlayer ? .white : rankColor)
 				.frame(width: 80, alignment: .trailing)
 		}
 		.padding(.vertical, 12)
@@ -169,13 +197,13 @@ struct ScoreRowView: View {
 		.opacity(isAnimating ? 1.0 : 0)
 	}
 	
-	// Background color based on rank
+	// Background color
 	private var rowBackground: some View {
 		Group {
-			switch rank {
-//			case 1:
-//				Color.orange.opacity(0.5)
-			default:
+			if isCurrentPlayer {
+				// Highlight for current player
+				Color.orange.opacity(0.8)
+			} else {
 				Color.white.opacity(0.7)
 			}
 		}
