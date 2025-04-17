@@ -72,7 +72,7 @@ struct SettingsView: View {
 				}
 				
 				Section {
-					Button("Start Game") {
+					Button("Start New Game") {
 						validateAndStartGame()
 					}
 					.frame(maxWidth: .infinity)
@@ -80,7 +80,7 @@ struct SettingsView: View {
 				}
 				
 				Section {
-					Button("Back to Main Menu") {
+					Button("Back to Menu") {
 						presentationMode.wrappedValue.dismiss()
 					}
 					.frame(maxWidth: .infinity)

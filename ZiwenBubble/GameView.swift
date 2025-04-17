@@ -141,12 +141,10 @@ struct GameView: View {
 				Text(viewModel.formattedTime)
 					.font(.title)
 					.fontWeight(.bold)
-					.foregroundColor(viewModel.timeRemaining <= 10 ? .red.opacity(0.9) : .black)
+					.foregroundColor(viewModel.timeRemaining <= 10 ? .red : .black)
 			}
 		}
 		.padding()
-		.background(Color.white.opacity(0.1))
-		.cornerRadius(10)
 	}
 	
 	// Game control bar
@@ -181,26 +179,8 @@ struct GameView: View {
 			
 			Spacer()
 			
-			// New Game and Restart button
-			Button(action: {
-				// If game is over, return to settings
-				if viewModel.gameState == .finished {
-					showSettings = true
-				} else {
-					// Otherwise offer to restart
-					viewModel.resetGame()
-					viewModel.startGame()
-					showPauseMenu = false
-				}
-			}) {
-				Image(systemName: "arrow.right.circle.fill")
-					.font(.system(size: 36))
-					.foregroundColor(.orange)
-			}
 		}
 		.padding()
-		.background(Color.white.opacity(0.1))
-		.cornerRadius(10)
 	}
 	
 	// Bubble game area
@@ -239,48 +219,46 @@ struct GameView: View {
 	// Pause menu
 	private var pauseMenu: some View {
 		ZStack {
-			Color.black.opacity(0.6)
+			// Background Color
+			Color.black.opacity(0.4)
 				.edgesIgnoringSafeArea(.all)
 			
+			// Main content container
 			VStack(spacing: 20) {
 				Text("Game Paused")
 					.font(.largeTitle)
 					.fontWeight(.bold)
 					.foregroundColor(.white)
 				
-				Button("Resume") {
-					viewModel.resumeGame()
-					showPauseMenu = false
+				// Buttons
+				Group {
+					Button("Resume") {
+						viewModel.resumeGame()
+						showPauseMenu = false
+					}
+					Button("Restart") {
+						viewModel.resetGame()
+						viewModel.startGame()
+						showPauseMenu = false
+					}
+					Button("Menu") {
+						presentationMode.wrappedValue.dismiss()
+					}
 				}
 				.font(.title2)
 				.foregroundColor(.white)
+				.frame(maxWidth: .infinity, minHeight: 15)
 				.padding()
-				.background(Color.green)
-				.cornerRadius(10)
-				
-				Button("Restart") {
-					viewModel.resetGame()
-					viewModel.startGame()
-					showPauseMenu = false
-				}
-				.font(.title2)
-				.foregroundColor(.white)
-				.padding()
-				.background(Color.blue)
-				.cornerRadius(10)
-				
-				Button("Main Menu") {
-					presentationMode.wrappedValue.dismiss()
-				}
-				.font(.title2)
-				.foregroundColor(.white)
-				.padding()
-				.background(Color.red)
-				.cornerRadius(10)
+				.background(
+					RoundedRectangle(cornerRadius: 20)
+						.fill(Color.white.opacity(0.2))
+				)
 			}
-			.padding(30)
-			.background(Color.gray.opacity(0.8))
+			.padding()
+			.background(Color.gray)
 			.cornerRadius(20)
+			.padding(.horizontal, 30)
+			.frame(maxWidth: .infinity)
 		}
 		.zIndex(2)
 	}

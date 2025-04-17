@@ -95,7 +95,7 @@ struct HighScoreView: View {
 				.foregroundColor(.white)
 				.padding(.vertical, 10)
 				.padding(.horizontal, 15)
-				.background(Color.black.opacity(0.6))
+				.background(Color.black.opacity(0.4))
 				.cornerRadius(10)
 				
 				// Score rows
@@ -152,11 +152,13 @@ struct ScoreRowView: View {
 			// Player name
 			Text(score.playerName)
 				.font(.system(size: 18))
+				.foregroundColor(rankColor)
 				.frame(maxWidth: .infinity, alignment: .leading)
 			
 			// Score
 			Text("\(score.score)")
-				.font(.system(size: 18, weight: .bold))
+				.font(.system(size: 18))
+				.foregroundColor(rankColor)
 				.frame(width: 80, alignment: .trailing)
 		}
 		.padding(.vertical, 12)
@@ -171,8 +173,8 @@ struct ScoreRowView: View {
 	private var rowBackground: some View {
 		Group {
 			switch rank {
-			case 1:
-				Color.yellow.opacity(0.5)
+//			case 1:
+//				Color.orange.opacity(0.5)
 			default:
 				Color.white.opacity(0.7)
 			}
