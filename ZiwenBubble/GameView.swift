@@ -115,9 +115,30 @@ struct GameView: View {
 					}
 				}
             }
-            .onAppear {
-                viewModel.updateScreenBounds(geometry.frame(in: .local))
-            }
+			.onAppear {
+				// Get the window scene's safe area insets
+				let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene
+				let safeAreaInsets = windowScene?.windows.first?.safeAreaInsets ?? UIEdgeInsets()
+				
+				// Create adjusted bounds that account for safe areas
+				let adjustedBounds = CGRect(
+					x: 0,
+					y: safeAreaInsets.top,
+					width: geometry.size.width,
+					height: geometry.size.height - safeAreaInsets.top - safeAreaInsets.bottom
+				)
+				
+				// Apply a safety margin for the bottom edge specifically
+				let safetyMargin: CGFloat = 20.0  // Add extra margin at bottom
+				let finalBounds = CGRect(
+					x: adjustedBounds.origin.x,
+					y: adjustedBounds.origin.y,
+					width: adjustedBounds.width,
+					height: adjustedBounds.height - safetyMargin
+				)
+				
+				viewModel.updateScreenBounds(finalBounds)
+			}
         }
     }
     	

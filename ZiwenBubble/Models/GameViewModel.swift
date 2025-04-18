@@ -153,8 +153,8 @@ class GameViewModel: ObservableObject {
 
 		for i in 0..<bubbles.count {
 			let radius = bubbles[i].size / 2
-			bubbles[i].position.x = min(max(bubbles[i].position.x, radius), screenBounds.width - radius)
-			bubbles[i].position.y = min(max(bubbles[i].position.y, radius), screenBounds.height - radius)
+			bubbles[i].position.x = max(radius, min(bubbles[i].position.x, screenBounds.width - radius))
+			bubbles[i].position.y = max(radius + screenBounds.origin.y, min(bubbles[i].position.y, screenBounds.height - radius + screenBounds.origin.y))
 		}
 	}
 	
@@ -318,103 +318,137 @@ class GameViewModel: ObservableObject {
 	
 	// Bubble Movement
 	private func updateBubblePositions() {
-    // Calculate time since last update
-    let timeElapsed = 0.016 // Approximately 60fps
-    
-    // Calculate speed factor based on remaining time
-    let speedFactor = 1.0 + Double(settings.gameTime - timeRemaining) / Double(settings.gameTime) * 2.0
-    
-    // Update bubble positions
-	for i in 0..<bubbles.count {
-		guard animatingBubbles[bubbles[i].id] != true else { continue }
 		
-		var bubble = bubbles[i]
-		let adjustedVelocity = CGVector(
-			dx: bubble.velocity.dx * speedFactor,
-			dy: bubble.velocity.dy * speedFactor
-		)
+		// Calculate time since last update
+		let timeElapsed = 0.016 // Approximately 60fps
 		
-		// Calculate new position
-		var newX = bubble.position.x + CGFloat(adjustedVelocity.dx * timeElapsed)
-		var newY = bubble.position.y + CGFloat(adjustedVelocity.dy * timeElapsed)
-		let radius = bubble.size / 2
+		// Calculate speed factor based on remaining time
+		let speedFactor = 1.0 + Double(settings.gameTime - timeRemaining) / Double(settings.gameTime) * 2.0
 		
-		// Bounce off edges to stay fully on-screen
-		if newX - radius < 0 {
-			newX = radius
-			bubble.velocity.dx = -bubble.velocity.dx
-		} else if newX + radius > screenBounds.width {
-			newX = screenBounds.width - radius
-			bubble.velocity.dx = -bubble.velocity.dx
-		}
-		
-		if newY - radius < 0 {
-			newY = radius
-			bubble.velocity.dy = -bubble.velocity.dy
-		} else if newY + radius > screenBounds.height {
-			newY = screenBounds.height - radius
-			bubble.velocity.dy = -bubble.velocity.dy
-		}
-		
-		bubble.position.x = newX
-		bubble.position.y = newY
+		// Update bubble positions
+		for i in 0..<bubbles.count {
+			guard animatingBubbles[bubbles[i].id] != true else { continue }
+			
+			var bubble = bubbles[i]
+			let adjustedVelocity = CGVector(
+				dx: bubble.velocity.dx * speedFactor,
+				dy: bubble.velocity.dy * speedFactor
+			)
+			
+			// Calculate new position
+			var newX = bubble.position.x + CGFloat(adjustedVelocity.dx * timeElapsed)
+			var newY = bubble.position.y + CGFloat(adjustedVelocity.dy * timeElapsed)
+			let radius = bubble.size / 2
+			
+			// Bounce off edges to stay fully on-screen
+			if newX - radius < 0 {
+				newX = radius
+				bubble.velocity.dx = -bubble.velocity.dx
+			} else if newX + radius > screenBounds.width {
+				newX = screenBounds.width - radius
+				bubble.velocity.dx = -bubble.velocity.dx
+			}
+			
+			// Calculate top and bottom boundaries
+			let topBoundary = screenBounds.origin.y
+			let bottomBoundary = screenBounds.origin.y + screenBounds.height
 
-		// Check for collisions with other bubbles
-		for j in (i+1)..<bubbles.count {
-			guard animatingBubbles[bubbles[j].id] != true else { continue }
+			if newY + radius > bottomBoundary {
+				// Force it above the boundary with some margin
+				newY = bottomBoundary - radius - 1.0  // Add 1.0 pixel margin
+				bubble.velocity.dy = -bubble.velocity.dy * 0.95
+			}
+
+			// Redundant clamp to handle floating-point errors
+			newY = min(max(newY, topBoundary + radius), bottomBoundary - radius)
 			
-			var otherBubble = bubbles[j]
-			let dx = bubble.position.x - otherBubble.position.x
-			let dy = bubble.position.y - otherBubble.position.y
-			let distance = sqrt(dx*dx + dy*dy)
-			let minDistance = (bubble.size + otherBubble.size) / 2
+			bubble.position.x = newX
+			bubble.position.y = newY
+
+			for i in 0..<bubbles.count {
+				let radius = bubbles[i].size / 2
+				bubbles[i].position.x = max(radius, min(bubbles[i].position.x, screenBounds.width - radius))
+				bubbles[i].position.y = max(radius + screenBounds.origin.y, min(bubbles[i].position.y, screenBounds.origin.y + screenBounds.height - radius))
+			}
 			
-			if distance < minDistance && distance != 0 {
-				// Collision detected
-				let nx = dx / distance
-				let ny = dy / distance
+			// Check for collisions with other bubbles
+			for j in (i+1)..<bubbles.count {
+				guard animatingBubbles[bubbles[j].id] != true else { continue }
 				
-				// Separate the bubbles
-				let overlap = (minDistance - distance) / 2
-				bubble.position.x += nx * overlap
-				bubble.position.y += ny * overlap
-				otherBubble.position.x -= nx * overlap
-				otherBubble.position.y -= ny * overlap
+				var otherBubble = bubbles[j]
+				let dx = bubble.position.x - otherBubble.position.x
+				let dy = bubble.position.y - otherBubble.position.y
+				let distance = sqrt(dx*dx + dy*dy)
+				let minDistance = (bubble.size + otherBubble.size) / 2
 				
-				// Reflect velocities
-				let velocityI = CGVector(dx: bubble.velocity.dx, dy: bubble.velocity.dy)
-				let velocityJ = CGVector(dx: otherBubble.velocity.dx, dy: otherBubble.velocity.dy)
-				
-				let dotProductI = velocityI.dx * nx + velocityI.dy * ny
-				let dotProductJ = velocityJ.dx * nx + velocityJ.dy * ny
-				
-				bubble.velocity.dx -= 2 * dotProductI * nx
-				bubble.velocity.dy -= 2 * dotProductI * ny
-				otherBubble.velocity.dx -= 2 * dotProductJ * nx
-				otherBubble.velocity.dy -= 2 * dotProductJ * ny
-				
-				// Update both bubbles in the array
-				bubbles[i] = bubble
-				bubbles[j] = otherBubble
+				if distance < minDistance && distance != 0 {
+					// Collision detected
+					let nx = dx / distance
+					let ny = dy / distance
+					
+					// Separate the bubbles
+					let overlap = (minDistance - distance) / 2
+					bubble.position.x += nx * overlap
+					bubble.position.y += ny * overlap
+					otherBubble.position.x -= nx * overlap
+					otherBubble.position.y -= ny * overlap
+					
+					// Reflect velocities
+					let velocityI = CGVector(dx: bubble.velocity.dx, dy: bubble.velocity.dy)
+					let velocityJ = CGVector(dx: otherBubble.velocity.dx, dy: otherBubble.velocity.dy)
+					
+					let dotProductI = velocityI.dx * nx + velocityI.dy * ny
+					let dotProductJ = velocityJ.dx * nx + velocityJ.dy * ny
+					
+					bubble.velocity.dx -= 2 * dotProductI * nx
+					bubble.velocity.dy -= 2 * dotProductI * ny
+					otherBubble.velocity.dx -= 2 * dotProductJ * nx
+					otherBubble.velocity.dy -= 2 * dotProductJ * ny
+					
+					// Update both bubbles in the array
+					bubbles[i] = bubble
+					bubbles[j] = otherBubble
+				}
+			}
+			
+			// Update the bubble in the array after all checks
+			bubbles[i] = bubble
+			
+			// Occasionally change direction to make movement more interesting
+			if Int.random(in: 0...500) == 0 {
+				bubbles[i].velocity.dx *= -1
+			}
+			if Int.random(in: 0...500) == 0 {
+				bubbles[i].velocity.dy *= -1
 			}
 		}
 		
-		// Update the bubble in the array after all checks
-		bubbles[i] = bubble
-        
-        // Occasionally change direction to make movement more interesting
-        if Int.random(in: 0...500) == 0 {
-            bubbles[i].velocity.dx *= -1
-        }
-        if Int.random(in: 0...500) == 0 {
-            bubbles[i].velocity.dy *= -1
-        }
-    }
-}
+		enforceBubbleBoundaries()
+	}
 	
 	// Utility Methods
 	func updateScreenBounds(_ bounds: CGRect) {
 		screenBounds = bounds
+		
+		// Immediately enforce these bounds on all existing bubbles
+		enforceBubbleBoundaries()
+	}
+	
+	// New method to enforce boundaries
+	private func enforceBubbleBoundaries() {
+		for i in 0..<bubbles.count {
+			let radius = bubbles[i].size / 2
+			
+			// Clamp the x position
+			bubbles[i].position.x = max(radius, min(bubbles[i].position.x, screenBounds.width - radius))
+			
+			// Clamp the y position
+			let topBoundary = screenBounds.origin.y + radius
+			let bottomBoundary = screenBounds.origin.y + screenBounds.height - radius
+			
+			// Apply clamping with a small extra buffer for the bottom
+			bubbles[i].position.y = max(topBoundary, min(bubbles[i].position.y, bottomBoundary - 5))
+		}
 	}
 	
 	// Format time as MM:SS
