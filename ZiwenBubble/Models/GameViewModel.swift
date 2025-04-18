@@ -150,11 +150,17 @@ class GameViewModel: ObservableObject {
 		for _ in 0..<bubblesNeeded {
 			addRandomBubble()
 		}
+
+		for i in 0..<bubbles.count {
+			let radius = bubbles[i].size / 2
+			bubbles[i].position.x = min(max(bubbles[i].position.x, radius), screenBounds.width - radius)
+			bubbles[i].position.y = min(max(bubbles[i].position.y, radius), screenBounds.height - radius)
+		}
 	}
 	
 	private func addRandomBubble() {
 		// Maximum attempts to find non-overlapping position
-		let maxAttempts = 50
+		let maxAttempts = 100
 		var attempts = 0
 		
 		while attempts < maxAttempts {
@@ -163,8 +169,9 @@ class GameViewModel: ObservableObject {
 			// Generate random position
 			let size = bubbleSize + CGFloat.random(in: -10...10)
 			let radius = size / 2
-			let x = CGFloat.random(in: radius...(screenBounds.width - radius))
-			let y = CGFloat.random(in: radius...(screenBounds.height - radius))
+			let padding: CGFloat = 5
+			let x = CGFloat.random(in: (radius + padding)...(screenBounds.width - radius - padding))
+			let y = CGFloat.random(in: (radius + padding)...(screenBounds.height - radius - padding))
 			let position = CGPoint(x: x, y: y)
 			
 			// Create bubble with random color
@@ -182,11 +189,50 @@ class GameViewModel: ObservableObject {
 			)
 			
 			// Check for overlaps with existing bubbles
-			if !bubbles.contains(where: { newBubble.overlaps(with: $0, inBounds: screenBounds) }) {
+			if !doesBubbleOverlap(newBubble) {
 				bubbles.append(newBubble)
 				return
 			}
 		}
+		let smallerSize = bubbleSize * 0.7
+		let radius = smallerSize / 2
+		let padding: CGFloat = 5
+		let x = CGFloat.random(in: (radius + padding)...(screenBounds.width - radius - padding))
+		let y = CGFloat.random(in: (radius + padding)...(screenBounds.height - radius - padding))
+		
+		var newBubble = Bubble(
+			position: CGPoint(x: x, y: y),
+			color: BubbleColor.random(),
+			size: smallerSize
+		)
+		
+		if !doesBubbleOverlap(newBubble) {
+			bubbles.append(newBubble)
+		}
+		
+		let maxVelocity = 20.0 * difficultyFactor
+		newBubble.velocity = CGVector(
+			dx: Double.random(in: -maxVelocity...maxVelocity),
+			dy: Double.random(in: -maxVelocity...maxVelocity)
+		)
+		
+		bubbles.append(newBubble)
+	}
+
+	private func doesBubbleOverlap(_ newBubble: Bubble) -> Bool {
+		for existingBubble in bubbles {
+			let dx = newBubble.position.x - existingBubble.position.x
+			let dy = newBubble.position.y - existingBubble.position.y
+			let distance = sqrt(dx*dx + dy*dy)
+			
+			// Correct minDistance to sum of radii (size is diameter)
+			let minDistance = (newBubble.size + existingBubble.size) / 2
+			
+			if distance < minDistance {
+				return true // Overlap detected
+			}
+		}
+		return false // No overlap
 	}
 	
 	// Bubble Interaction Methods
@@ -279,33 +325,89 @@ class GameViewModel: ObservableObject {
     let speedFactor = 1.0 + Double(settings.gameTime - timeRemaining) / Double(settings.gameTime) * 2.0
     
     // Update bubble positions
-    for i in 0..<bubbles.count {
-        // Skip bubbles that are being animated for removal
-        if animatingBubbles[bubbles[i].id] == true {
-            continue
+	for i in 0..<bubbles.count {
+		guard animatingBubbles[bubbles[i].id] != true else { continue }
+		
+		var bubble = bubbles[i]
+		let adjustedVelocity = CGVector(
+			dx: bubble.velocity.dx * speedFactor,
+			dy: bubble.velocity.dy * speedFactor
+		)
+		
+		// Calculate new position
+		var newX = bubble.position.x + CGFloat(adjustedVelocity.dx * timeElapsed)
+		var newY = bubble.position.y + CGFloat(adjustedVelocity.dy * timeElapsed)
+		let radius = bubble.size / 2
+		
+		// Bounce off edges to stay fully on-screen
+		if newX - radius < 0 {
+			newX = radius
+			bubble.velocity.dx = -bubble.velocity.dx
+		} else if newX + radius > screenBounds.width {
+			newX = screenBounds.width - radius
+			bubble.velocity.dx = -bubble.velocity.dx
+		}
+		
+		if newY - radius < 0 {
+			newY = radius
+			bubble.velocity.dy = -bubble.velocity.dy
+		} else if newY + radius > screenBounds.height {
+			newY = screenBounds.height - radius
+			bubble.velocity.dy = -bubble.velocity.dy
+		}
+		
+		bubble.position.x = newX
+		bubble.position.y = newY
+
+		// Check for collisions with other bubbles
+		for j in (i+1)..<bubbles.count {
+			guard animatingBubbles[bubbles[j].id] != true else { continue }
+			
+			var otherBubble = bubbles[j]
+			let dx = bubble.position.x - otherBubble.position.x
+			let dy = bubble.position.y - otherBubble.position.y
+			let distance = sqrt(dx*dx + dy*dy)
+			let minDistance = (bubble.size + otherBubble.size) / 2
+			
+			if distance < minDistance && distance != 0 {
+				// Collision detected
+				let nx = dx / distance
+				let ny = dy / distance
+				
+				// Separate the bubbles
+				let overlap = (minDistance - distance) / 2
+				bubble.position.x += nx * overlap
+				bubble.position.y += ny * overlap
+				otherBubble.position.x -= nx * overlap
+				otherBubble.position.y -= ny * overlap
+				
+				// Reflect velocities
+				let velocityI = CGVector(dx: bubble.velocity.dx, dy: bubble.velocity.dy)
+				let velocityJ = CGVector(dx: otherBubble.velocity.dx, dy: otherBubble.velocity.dy)
+				
+				let dotProductI = velocityI.dx * nx + velocityI.dy * ny
+				let dotProductJ = velocityJ.dx * nx + velocityJ.dy * ny
+				
+				bubble.velocity.dx -= 2 * dotProductI * nx
+				bubble.velocity.dy -= 2 * dotProductI * ny
+				otherBubble.velocity.dx -= 2 * dotProductJ * nx
+				otherBubble.velocity.dy -= 2 * dotProductJ * ny
+				
+				// Update both bubbles in the array
+				bubbles[i] = bubble
+				bubbles[j] = otherBubble
+			}
+		}
+		
+		// Update the bubble in the array after all checks
+		bubbles[i] = bubble
+        
+        // Occasionally change direction to make movement more interesting
+        if Int.random(in: 0...500) == 0 {
+            bubbles[i].velocity.dx *= -1
         }
-        
-        // Apply speed factor to movement
-        let adjustedVelocity = CGVector(
-            dx: bubbles[i].velocity.dx * speedFactor,
-            dy: bubbles[i].velocity.dy * speedFactor
-        )
-        
-        // Update position with adjusted velocity
-        bubbles[i].position.x += CGFloat(adjustedVelocity.dx * timeElapsed)
-        bubbles[i].position.y += CGFloat(adjustedVelocity.dy * timeElapsed)
-        
-        // Check if bubble is out of bounds
-        let radius = bubbles[i].size / 2
-        let isOutOfBounds = bubbles[i].position.x < -radius || 
-                           bubbles[i].position.x > screenBounds.width + radius ||
-                           bubbles[i].position.y < -radius || 
-                           bubbles[i].position.y > screenBounds.height + radius
-        
-        if isOutOfBounds {
-            // Remove the bubble if out of bounds
-            bubbles.remove(at: i)
-            break
+        if Int.random(in: 0...500) == 0 {
+            bubbles[i].velocity.dy *= -1
         }
     }
 }
