@@ -10,46 +10,56 @@ import SwiftUI
 struct ContentView: View {
 	@State private var isAnimating = false
 	@StateObject private var settingsViewModel = SettingsViewModel()
+	@State private var isLandscape: Bool = false
 	
 	var body: some View {
 		NavigationView {
 			ZStack {
-				// Animated bubbles in background
+				// Background elements
 				BubbleBackgroundView()
 				Color.blue.opacity(0.05).edgesIgnoringSafeArea(.all)
 				
-				// Main
-				VStack(spacing: 90) {
-					Spacer()
-					// Title
-					Text("Bubble Pop")
-						.font(.system(size: 46, weight: .bold))
-						.foregroundColor(.black)
+				GeometryReader { geometry in
+					let isLandscape = geometry.size.width > geometry.size.height
+					
+					VStack(spacing: isLandscape ? 30 : 60) {
+						// Title
+						Text("Bubble Pop")
+							.font(.system(
+								size: isLandscape ? 36 : 46,
+								weight: .bold
+							))
+							.foregroundColor(.black)
+							.scaleEffect(isAnimating ? 1.0 : 0.8)
+							.opacity(isAnimating ? 1.0 : 0.0)
+							.animation(.spring(response: 0.5, dampingFraction: 0.6), value: isAnimating)
+						
+						// Buttons
+						VStack(spacing: isLandscape ? 25 : 40) {
+							NavigationLink(destination: GameView().environmentObject(settingsViewModel)) {
+								ButtonView(title: "New Game", icon: "play.circle.fill", color: .orange)
+							}
+							
+							NavigationLink(destination: HighScoreView()) {
+								ButtonView(title: "High Scores", icon: "star.fill", color: .brown)
+							}
+							
+							NavigationLink(destination: SettingsView().environmentObject(settingsViewModel)) {
+								ButtonView(title: "Settings", icon: "gear", color: .gray)
+							}
+						}
 						.scaleEffect(isAnimating ? 1.0 : 0.8)
 						.opacity(isAnimating ? 1.0 : 0.0)
-						.animation(.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0), value: isAnimating)
-					
-					// Game buttons
-					VStack(spacing: 40) {
-						NavigationLink(destination: GameView().environmentObject(settingsViewModel)) {
-							ButtonView(title: "New Game", icon: "play.circle.fill", color: .orange)
-						}
-						
-						NavigationLink(destination: HighScoreView()) {
-							ButtonView(title: "High Scores", icon: "star.fill", color: .brown)
-						}
-						
-						NavigationLink(destination: SettingsView().environmentObject(settingsViewModel)) {
-							ButtonView(title: "Settings", icon: "gear", color: .gray)
-						}
+						.animation(.spring(response: 0.5, dampingFraction: 0.6).delay(0.2), value: isAnimating)
 					}
-					.scaleEffect(isAnimating ? 1.0 : 0.8)
-					.opacity(isAnimating ? 1.0 : 0.0)
-					.animation(.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0).delay(0.2), value: isAnimating)
-					
+					.frame(maxWidth: .infinity, maxHeight: .infinity)
+					.padding(.horizontal, isLandscape ? 40 : 20)
+					.padding(.vertical, isLandscape ? 0 : 20)
+				}
+				
+				// Copyright
+				VStack {
 					Spacer()
-					
-					// Copyright
 					Text("© 2025 ZZ BubblePop")
 						.font(.caption)
 						.foregroundColor(.gray.opacity(0.7))
@@ -57,10 +67,8 @@ struct ContentView: View {
 						.opacity(isAnimating ? 1.0 : 0.0)
 						.animation(.easeIn.delay(0.5), value: isAnimating)
 				}
-				.padding()
 			}
 			.onAppear {
-				// Trigger animations when view appears
 				DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
 					isAnimating = true
 				}
