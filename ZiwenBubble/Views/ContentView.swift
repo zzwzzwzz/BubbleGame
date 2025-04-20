@@ -54,6 +54,11 @@ struct ContentView: View {
 								ButtonView(title: "Settings", icon: "gear", color: .gray)
 							}
 						}
+						NavigationLink(
+							destination: GameView().environmentObject(settingsViewModel),
+							isActive: $navigateToGame
+						) { EmptyView() }
+						
 						.scaleEffect(isAnimating ? 1.0 : 0.8)
 						.opacity(isAnimating ? 1.0 : 0.0)
 						.animation(.spring(response: 0.5, dampingFraction: 0.6).delay(0.2), value: isAnimating)

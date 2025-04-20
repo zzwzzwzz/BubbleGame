@@ -19,86 +19,85 @@ struct GameSetupView: View {
 	var onStartGame: () -> Void
 	
 	var body: some View {
-		NavigationView {
-			Form {
-				Section(header: Text("Player Information")) {
-					TextField("Enter your name", text: $tempName)
-						.autocapitalization(.words)
-						.disableAutocorrection(true)
-				}
-				
-				Section(header: Text("Game Settings")) {
-					HStack {
-						Text("Game Time (Seconds)")
-						Spacer()
-						TextField("", value: $tempGameTime, format: .number)
-							.keyboardType(.numberPad)
-							.multilineTextAlignment(.trailing)
-							.frame(width: 60)
-					}
-					
-					// Game time slider
-					Slider(value: Binding(
-						get: { Double(tempGameTime) },
-						set: { tempGameTime = Int($0) }
-					), in: Double(settingsViewModel.minGameTime)...Double(settingsViewModel.maxGameTime), step: 1)
-					
-					Text("Range: \(settingsViewModel.minGameTime)-\(settingsViewModel.maxGameTime) Seconds")
-						.font(.caption)
-						.foregroundColor(isGameTimeValid ? .gray : .red)
-					
-					HStack {
-						Text("Maximum Bubbles")
-						Spacer()
-						TextField("", value: $tempMaxBubbles, format: .number)
-							.keyboardType(.numberPad)
-							.multilineTextAlignment(.trailing)
-							.frame(width: 60)
-					}
-					
-					// Max bubbles slider
-					Slider(value: Binding(
-						get: { Double(tempMaxBubbles) },
-						set: { tempMaxBubbles = Int($0) }
-					), in: Double(settingsViewModel.minBubbles)...Double(settingsViewModel.maxBubblesLimit), step: 1)
-					
-					Text("Range: \(settingsViewModel.minBubbles)-\(settingsViewModel.maxBubblesLimit) Bubbles")
-						.font(.caption)
-						.foregroundColor(isMaxBubblesValid ? .gray : .red)
-				}
-				
-				Section {
-					Button("Start Game") {
-						validateAndStartGame()
-					}
-					.frame(maxWidth: .infinity)
-					.disabled(!areSettingsValid)
-				}
-				
-				Section {
-					Button("Back") {
-						presentationMode.wrappedValue.dismiss()
-					}
-					.frame(maxWidth: .infinity)
-				}
+		Form {
+			Section(header: Text("Player Information")) {
+				TextField("Enter your name", text: $tempName)
+					.autocapitalization(.words)
+					.disableAutocorrection(true)
 			}
-			.formStyle(.grouped)
-			.navigationTitle("Game Setup")
-			.navigationBarTitleDisplayMode(.inline)
-			.alert(isPresented: $showAlert) {
-				Alert(
-					title: Text("Invalid Settings"),
-					message: Text(alertMessage),
-					dismissButton: .default(Text("OK"))
-				)
+			
+			Section(header: Text("Game Settings")) {
+				HStack {
+					Text("Game Time (Seconds)")
+					Spacer()
+					TextField("", value: $tempGameTime, format: .number)
+						.keyboardType(.numberPad)
+						.multilineTextAlignment(.trailing)
+						.frame(width: 60)
+				}
+				
+				// Game time slider
+				Slider(value: Binding(
+					get: { Double(tempGameTime) },
+					set: { tempGameTime = Int($0) }
+				), in: Double(settingsViewModel.minGameTime)...Double(settingsViewModel.maxGameTime), step: 1)
+				
+				Text("Range: \(settingsViewModel.minGameTime)-\(settingsViewModel.maxGameTime) Seconds")
+					.font(.caption)
+					.foregroundColor(isGameTimeValid ? .gray : .red)
+				
+				HStack {
+					Text("Maximum Bubbles")
+					Spacer()
+					TextField("", value: $tempMaxBubbles, format: .number)
+						.keyboardType(.numberPad)
+						.multilineTextAlignment(.trailing)
+						.frame(width: 60)
+				}
+				
+				// Max bubbles slider
+				Slider(value: Binding(
+					get: { Double(tempMaxBubbles) },
+					set: { tempMaxBubbles = Int($0) }
+				), in: Double(settingsViewModel.minBubbles)...Double(settingsViewModel.maxBubblesLimit), step: 1)
+				
+				Text("Range: \(settingsViewModel.minBubbles)-\(settingsViewModel.maxBubblesLimit) Bubbles")
+					.font(.caption)
+					.foregroundColor(isMaxBubblesValid ? .gray : .red)
 			}
-			.onAppear {
-				// Set default values when view appears
-				tempName = ""
-				tempGameTime = 60
-				tempMaxBubbles = 15
+			
+			Section {
+				Button("Start Game") {
+					validateAndStartGame()
+				}
+				.frame(maxWidth: .infinity)
+				.disabled(!areSettingsValid)
+			}
+			
+			Section {
+				Button("Back") {
+					presentationMode.wrappedValue.dismiss()
+				}
+				.frame(maxWidth: .infinity)
 			}
 		}
+		.formStyle(.grouped)
+		.navigationTitle("Game Setup")
+		.navigationBarTitleDisplayMode(.inline)
+		.alert(isPresented: $showAlert) {
+			Alert(
+				title: Text("Invalid Settings"),
+				message: Text(alertMessage),
+				dismissButton: .default(Text("OK"))
+			)
+		}
+		.onAppear {
+			// Set default values when view appears
+			tempName = ""
+			tempGameTime = 60
+			tempMaxBubbles = 15
+		}
+
 		.navigationViewStyle(StackNavigationViewStyle())
 	}
 	
@@ -153,8 +152,6 @@ struct GameSetupView: View {
 		// Start the game
 		onStartGame()
 		
-		// Dismiss this view
-		presentationMode.wrappedValue.dismiss()
 	}
 }
 
