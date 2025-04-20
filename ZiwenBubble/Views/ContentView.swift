@@ -13,9 +13,10 @@ struct ContentView: View {
 	@State private var isLandscape: Bool = false
 	@State private var showGameSetup: Bool = false
 	@State private var navigateToGame: Bool = false
+	@State private var navigationPath = NavigationPath()
 	
 	var body: some View {
-		NavigationView {
+		NavigationStack (path: $navigationPath) {
 			ZStack {
 				// Background elements
 				BubbleBackgroundView()
@@ -39,26 +40,24 @@ struct ContentView: View {
 						// Buttons
 						VStack(spacing: isLandscape ? 25 : 40) {
 							// New Game Button
-							NavigationLink(destination: GameSetupView(onStartGame: {
-								// Navigate to GameView
-								navigateToGame = true
-							}).environmentObject(settingsViewModel)) {
+							Button {
+								navigationPath.append("gameSetup")
+							} label: {
 								ButtonView(title: "New Game", icon: "play.circle.fill", color: .orange)
 							}
 
-							NavigationLink(destination: HighScoreView()) {
+							Button {
+								navigationPath.append("highScores")
+							} label: {
 								ButtonView(title: "High Scores", icon: "star.fill", color: .brown)
 							}
 							
-							NavigationLink(destination: SettingsView().environmentObject(settingsViewModel)) {
+							Button {
+								navigationPath.append("settings")
+							} label: {
 								ButtonView(title: "Settings", icon: "gear", color: .gray)
 							}
 						}
-						NavigationLink(
-							destination: GameView().environmentObject(settingsViewModel),
-							isActive: $navigateToGame
-						) { EmptyView() }
-						
 						.scaleEffect(isAnimating ? 1.0 : 0.8)
 						.opacity(isAnimating ? 1.0 : 0.0)
 						.animation(.spring(response: 0.5, dampingFraction: 0.6).delay(0.2), value: isAnimating)
@@ -78,29 +77,30 @@ struct ContentView: View {
 						.opacity(isAnimating ? 1.0 : 0.0)
 						.animation(.easeIn.delay(0.5), value: isAnimating)
 				}
-				
-				// Show Game Setup sheet
-				if showGameSetup {
-					GameSetupView(onStartGame: {
-						// Will be called when setup is complete and game should start
-						navigateToGame = true
-					})
-					.environmentObject(settingsViewModel)
-					.transition(.move(edge: .bottom))
-				}
 			}
 			.onAppear {
 				DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
 					isAnimating = true
 				}
 			}
-			.navigationBarHidden(true)
-			// Force stack navigation style for all devices
-			.navigationViewStyle(StackNavigationViewStyle())
+			.navigationDestination(for: String.self) { destination in
+				switch destination {
+				case "gameSetup":
+					GameSetupView(onStartGame: {
+						navigationPath.append("game")
+					}).environmentObject(settingsViewModel)
+				case "highScores":
+					HighScoreView()
+				case "settings":
+					SettingsView().environmentObject(settingsViewModel)
+				case "game":
+					GameView().environmentObject(settingsViewModel)
+				default:
+					EmptyView()
+				}
+			}
 		}
-		.navigationViewStyle(StackNavigationViewStyle())
 		.environmentObject(settingsViewModel)
-		.phoneOnlyStackNavigationView()
 	}
 }
 
