@@ -14,86 +14,86 @@ struct SettingsView: View {
 	@State private var alertMessage = ""
 	
 	var body: some View {
-		NavigationView {
-			Form {
-				Section(header: Text("Player Information")) {
-					TextField("Enter your name", text: $viewModel.playerName)
-						.autocapitalization(.words)
-						.disableAutocorrection(true)
-						.onChange(of: viewModel.playerName) {
+		Form {
+			Section(header: Text("Player Information")) {
+				TextField("Enter your name", text: $viewModel.playerName)
+					.autocapitalization(.words)
+					.disableAutocorrection(true)
+					.onChange(of: viewModel.playerName) {
+						viewModel.saveSettings()
+					}
+			}
+			
+			Section(header: Text("Game Settings")) {
+				HStack {
+					Text("Game Time (Seconds)")
+					Spacer()
+					TextField("", value: $viewModel.gameTime, format: .number)
+						.keyboardType(.numberPad)
+						.multilineTextAlignment(.trailing)
+						.frame(width: 60)
+						.onChange(of: viewModel.gameTime) {
 							viewModel.saveSettings()
 						}
 				}
 				
-				Section(header: Text("Game Settings")) {
-					HStack {
-						Text("Game Time (Seconds)")
-						Spacer()
-						TextField("", value: $viewModel.gameTime, format: .number)
-							.keyboardType(.numberPad)
-							.multilineTextAlignment(.trailing)
-							.frame(width: 60)
-							.onChange(of: viewModel.gameTime) {
-								viewModel.saveSettings()
-							}
-					}
-					
-					// Game time slider
-					Slider(value: Binding(
-						get: { Double(viewModel.gameTime) },
-						set: { viewModel.gameTime = Int($0) }
-					), in: Double(viewModel.minGameTime)...Double(viewModel.maxGameTime), step: 1)
-					
-					Text("Range: \(viewModel.minGameTime)-\(viewModel.maxGameTime) Seconds")
-						.font(.caption)
-						.foregroundColor(viewModel.isGameTimeValid ? .gray : .red)
-					
-					HStack {
-						Text("Maximum Bubbles")
-						Spacer()
-						TextField("", value: $viewModel.maxBubbles, format: .number)
-							.keyboardType(.numberPad)
-							.multilineTextAlignment(.trailing)
-							.frame(width: 60)
-							.onChange(of: viewModel.maxBubbles) {
-								viewModel.saveSettings()
-							}
-					}
-					
-					// Max bubbles slider
-					Slider(value: Binding(
-						get: { Double(viewModel.maxBubbles) },
-						set: { viewModel.maxBubbles = Int($0) }
-					), in: Double(viewModel.minBubbles)...Double(viewModel.maxBubblesLimit), step: 1)
-					
-					Text("Range: \(viewModel.minBubbles)-\(viewModel.maxBubblesLimit) Bubbles")
-						.font(.caption)
-						.foregroundColor(viewModel.isMaxBubblesValid ? .gray : .red)
+				// Game time slider
+				Slider(value: Binding(
+					get: { Double(viewModel.gameTime) },
+					set: { viewModel.gameTime = Int($0) }
+				), in: Double(viewModel.minGameTime)...Double(viewModel.maxGameTime), step: 1)
+				
+				Text("Range: \(viewModel.minGameTime)-\(viewModel.maxGameTime) Seconds")
+					.font(.caption)
+					.foregroundColor(viewModel.isGameTimeValid ? .gray : .red)
+				
+				HStack {
+					Text("Maximum Bubbles")
+					Spacer()
+					TextField("", value: $viewModel.maxBubbles, format: .number)
+						.keyboardType(.numberPad)
+						.multilineTextAlignment(.trailing)
+						.frame(width: 60)
+						.onChange(of: viewModel.maxBubbles) {
+							viewModel.saveSettings()
+						}
 				}
 				
-				Section {
-					Button("Start New Game") {
-						validateAndStartGame()
-					}
-					.frame(maxWidth: .infinity)
-					.disabled(!viewModel.areSettingsValid)
-				}
+				// Max bubbles slider
+				Slider(value: Binding(
+					get: { Double(viewModel.maxBubbles) },
+					set: { viewModel.maxBubbles = Int($0) }
+				), in: Double(viewModel.minBubbles)...Double(viewModel.maxBubblesLimit), step: 1)
 				
-				Section {
-					Button("Back to Menu") {
-						presentationMode.wrappedValue.dismiss()
-					}
-					.frame(maxWidth: .infinity)
+				Text("Range: \(viewModel.minBubbles)-\(viewModel.maxBubblesLimit) Bubbles")
+					.font(.caption)
+					.foregroundColor(viewModel.isMaxBubblesValid ? .gray : .red)
+			}
+			
+			Section {
+				Button("Start New Game") {
+					validateAndStartGame()
 				}
+				.frame(maxWidth: .infinity)
+				.disabled(!viewModel.areSettingsValid)
 			}
-			.navigationTitle("Game Settings")
-			.alert(isPresented: $showAlert) {
-				Alert(
-					title: Text("Invalid Settings"),
-					message: Text(alertMessage),
-					dismissButton: .default(Text("OK"))
-				)
+			
+			Section {
+				Button("Back to Menu") {
+					presentationMode.wrappedValue.dismiss()
+				}
+				.frame(maxWidth: .infinity)
 			}
+		}
+		.formStyle(.grouped)
+		.navigationTitle("Game Settings")
+		.navigationBarTitleDisplayMode(.inline)
+		.alert(isPresented: $showAlert) {
+			Alert(
+				title: Text("Invalid Settings"),
+				message: Text(alertMessage),
+				dismissButton: .default(Text("OK"))
+			)
 		}
 	}
 	

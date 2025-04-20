@@ -74,9 +74,23 @@ struct ContentView: View {
 				}
 			}
 			.navigationBarHidden(true)
+			// Force stack navigation style for all devices
+			.navigationViewStyle(StackNavigationViewStyle())
 		}
 		.navigationViewStyle(StackNavigationViewStyle())
 		.environmentObject(settingsViewModel)
+		.phoneOnlyStackNavigationView()
+	}
+}
+
+extension View {
+	@ViewBuilder
+	func phoneOnlyStackNavigationView() -> some View {
+		if UIDevice.current.userInterfaceIdiom == .phone {
+			self.navigationViewStyle(StackNavigationViewStyle())
+		} else {
+			self.navigationViewStyle(DefaultNavigationViewStyle())
+		}
 	}
 }
 

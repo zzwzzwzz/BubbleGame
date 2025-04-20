@@ -33,15 +33,18 @@ struct GameView: View {
             
             // Settings Sheet
             if showSettings {
-                SettingsView()
-                    .environmentObject(settingsViewModel)
-                    .transition(.move(edge: .bottom))
-                    .onDisappear {
-                        // Only initialize if we're coming back from settings
-                        if settingsViewModel.areSettingsValid {
-                            initializeGame()
-                        }
-                    }
+				NavigationView {
+					SettingsView()
+						.environmentObject(settingsViewModel)
+				}
+				.navigationViewStyle(StackNavigationViewStyle())
+				.transition(.move(edge: .bottom))
+				.onDisappear {
+					// Only initialize if we're coming back from settings
+					if settingsViewModel.areSettingsValid {
+						initializeGame()
+					}
+				}
             }
             
             // Pause Menu
