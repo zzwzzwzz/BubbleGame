@@ -10,18 +10,21 @@ import SwiftUI
 struct GameView: View {
 	// Properties
 	@EnvironmentObject var settingsViewModel: SettingsViewModel
-    @StateObject private var viewModel: GameViewModel
-    @State private var screenSize: CGSize = UIScreen.main.bounds.size
-    @Environment(\.presentationMode) var presentationMode
-    @State private var showSettings = false
-    @State private var showPauseMenu = false
-    @State private var showHighScores = false
-	
+	@StateObject private var viewModel: GameViewModel
+	@State private var screenSize: CGSize = UIScreen.main.bounds.size
+	@Environment(\.presentationMode) var presentationMode
+	@State private var showSettings = false
+	@State private var showPauseMenu = false
+	@State private var showHighScores = false
+		
 	// Initializer with default settings
 	init() {
-		// Set default value
-		let defaultSettings = SettingsModel(playerName: "Player", gameTime: 60, maxBubbles: 15)
-		_viewModel = StateObject(wrappedValue: GameViewModel(settings: defaultSettings))
+		let settings = SettingsModel(
+			playerName: SettingsViewModel().playerName,
+			gameTime: SettingsViewModel().gameTime,
+			maxBubbles: SettingsViewModel().maxBubbles
+		)
+		_viewModel = StateObject(wrappedValue: GameViewModel(settings: settings))
 	}
 
 	// Game Body
@@ -32,7 +35,7 @@ struct GameView: View {
             gameContent(viewModel)
             
             // Settings Sheet
-            if showSettings {
+			if showSettings {
 				NavigationView {
 					SettingsView()
 						.environmentObject(settingsViewModel)
@@ -45,7 +48,7 @@ struct GameView: View {
 						initializeGame()
 					}
 				}
-            }
+			}
             
             // Pause Menu
             if showPauseMenu {
@@ -64,15 +67,15 @@ struct GameView: View {
         }
 		.navigationBarHidden(true)
 		.onAppear {
-            initializeGame()
-        }
-        .onChange(of: screenSize) { _, newValue in
-            viewModel.updateScreenBounds(CGRect(origin: .zero, size: newValue))
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
-            let newSize = UIScreen.main.bounds.size
-            screenSize = newSize
-        }
+			initializeGame()
+		}
+		.onChange(of: screenSize) { _, newValue in
+			viewModel.updateScreenBounds(CGRect(origin: .zero, size: newValue))
+		}
+		.onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
+			let newSize = UIScreen.main.bounds.size
+			screenSize = newSize
+		}
 	}
 	
 	// Game Content
@@ -302,24 +305,24 @@ struct GameView: View {
 	}
 	
 	// Initialize the game with current settings
-    private func initializeGame() {
-        let settings = SettingsModel(
-            playerName: settingsViewModel.playerName,
-            gameTime: settingsViewModel.gameTime,
-            maxBubbles: settingsViewModel.maxBubbles
-        )
-        
-        // Update the existing view model with new settings
-        viewModel.updateSettings(settings)
-        
-        // Auto-start if settings are valid
-        if settingsViewModel.areSettingsValid {
-            viewModel.startGame()
-        } else {
-            // Show settings sheet if needed
-            showSettings = true
-        }
-    }
+	private func initializeGame() {
+		let settings = SettingsModel(
+			playerName: settingsViewModel.playerName,
+			gameTime: settingsViewModel.gameTime,
+			maxBubbles: settingsViewModel.maxBubbles
+		)
+		
+		// Update the existing view model with new settings
+		viewModel.updateSettings(settings)
+		
+		// Autostart if settings are valid
+		if settingsViewModel.areSettingsValid {
+			viewModel.startGame()
+		} else {
+			// Show settings sheet
+			showSettings = true
+		}
+	}
 }
 
 // Bubble View

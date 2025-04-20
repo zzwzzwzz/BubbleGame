@@ -11,6 +11,8 @@ struct ContentView: View {
 	@State private var isAnimating = false
 	@StateObject private var settingsViewModel = SettingsViewModel()
 	@State private var isLandscape: Bool = false
+	@State private var showGameSetup: Bool = false
+	@State private var navigateToGame: Bool = false
 	
 	var body: some View {
 		NavigationView {
@@ -36,10 +38,14 @@ struct ContentView: View {
 						
 						// Buttons
 						VStack(spacing: isLandscape ? 25 : 40) {
-							NavigationLink(destination: GameView().environmentObject(settingsViewModel)) {
+							// New Game Button
+							NavigationLink(destination: GameSetupView(onStartGame: {
+								// Navigate to GameView
+								navigateToGame = true
+							}).environmentObject(settingsViewModel)) {
 								ButtonView(title: "New Game", icon: "play.circle.fill", color: .orange)
 							}
-							
+
 							NavigationLink(destination: HighScoreView()) {
 								ButtonView(title: "High Scores", icon: "star.fill", color: .brown)
 							}
@@ -66,6 +72,16 @@ struct ContentView: View {
 						.padding(.bottom, 10)
 						.opacity(isAnimating ? 1.0 : 0.0)
 						.animation(.easeIn.delay(0.5), value: isAnimating)
+				}
+				
+				// Show Game Setup sheet
+				if showGameSetup {
+					GameSetupView(onStartGame: {
+						// Will be called when setup is complete and game should start
+						navigateToGame = true
+					})
+					.environmentObject(settingsViewModel)
+					.transition(.move(edge: .bottom))
 				}
 			}
 			.onAppear {
