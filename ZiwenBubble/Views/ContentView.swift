@@ -70,7 +70,7 @@ struct ContentView: View {
 				// Copyright
 				VStack {
 					Spacer()
-					Text("© 2025 ZZ BubblePop")
+					Text("© 2025 zzwzzwzz")
 						.font(.caption)
 						.foregroundColor(.gray.opacity(0.7))
 						.padding(.bottom, 10)
