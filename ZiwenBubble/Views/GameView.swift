@@ -62,7 +62,8 @@ struct GameView: View {
 			if showHighScores {
 				HighScoreView(
 					currentPlayerName: settingsViewModel.playerName,
-					currentScore: viewModel.score
+					currentScore: viewModel.score,
+					currentScoreId: viewModel.currentScoreId
 				)
 				.transition(.opacity)
 				.zIndex(3)
@@ -91,12 +92,16 @@ struct GameView: View {
 				// Show different views based on game state
 				if viewModel.shouldShowHighScores {
 					// Show high scores when game is finished
-					HighScoreView(currentPlayerName: settingsViewModel.playerName, currentScore: viewModel.score)
-						.transition(.opacity)
-						.onDisappear {
-							// Reset when high scores view is dismissed
-							viewModel.shouldShowHighScores = false
-						}
+					HighScoreView(
+						currentPlayerName: settingsViewModel.playerName,
+						currentScore: viewModel.score,
+						currentScoreId: viewModel.currentScoreId
+					)
+					.transition(.opacity)
+					.onDisappear {
+						// Reset when high scores view is dismissed
+						viewModel.shouldShowHighScores = false
+					}
 				} else {
 					// Game state dependent views
 					ZStack {

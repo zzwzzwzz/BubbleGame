@@ -20,6 +20,7 @@ class GameViewModel: ObservableObject {
 	@Published var highestScore: Int = 0
 	@Published var countdownValue: Int = 3
 	@Published var shouldShowHighScores: Bool = false
+	@Published var currentScoreId: UUID?
 
 	private var settings: SettingsModel
 	private var timer: Timer?
@@ -104,7 +105,7 @@ class GameViewModel: ObservableObject {
 			score: score,
 			date: Date()
 		)
-		
+		self.currentScoreId = newScore.id
 		scoreManager.saveScore(newScore)
 		highestScore = scoreManager.getHighestScore()
 		

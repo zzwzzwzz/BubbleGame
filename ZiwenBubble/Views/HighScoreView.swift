@@ -14,15 +14,19 @@ struct HighScoreView: View {
 	@Environment(\.presentationMode) var presentationMode
 	@EnvironmentObject var navigationManager: NavigationManager
 	private let scoreManager = ScoreManager()
+	@State private var currentTimestamp: Date? = nil
 	
 	// Current player info
 	var currentPlayerName: String?
 	var currentScore: Int?
+	var currentScoreId: UUID?
 	
 	// Initialize with optional parameters
-	init(currentPlayerName: String? = nil, currentScore: Int? = nil) {
+	init(currentPlayerName: String? = nil, currentScore: Int? = nil, currentScoreId: UUID? = nil) {
 		self.currentPlayerName = currentPlayerName
 		self.currentScore = currentScore
+		self.currentScoreId = currentScoreId
+		self.currentTimestamp = Date()
 	}
 	
 	// Body
@@ -153,10 +157,21 @@ struct HighScoreView: View {
 	}
 	
 	private func isCurrentPlayerScore(_ score: GameScore) -> Bool {
-		guard let currentName = currentPlayerName,
-			  let currentScore = currentScore else { return false }
+		// First check if we have a specific ID to match
+		if let scoreId = currentScoreId {
+			return score.id == scoreId
+		}
 		
-		return score.playerName == currentName && score.score == currentScore
+		// Fall back to name, score and recent timestamp
+		guard let currentName = currentPlayerName,
+			let currentScore = currentScore,
+			let timestamp = currentTimestamp else { return false }
+		
+		// Only consider it current if it matches AND was created recently (within 5 seconds)
+		let timeInterval = abs(score.date.timeIntervalSince(timestamp))
+		return score.playerName == currentName && 
+			score.score == currentScore &&
+			timeInterval < 5.0 // Only highlight very recent scores
 	}
 }
 
