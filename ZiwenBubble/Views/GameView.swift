@@ -16,6 +16,7 @@ struct GameView: View {
 	@State private var showSettings = false
 	@State private var showPauseMenu = false
 	@State private var showHighScores = false
+	@State private var navigationPath = NavigationPath()
 		
 	// Initializer with default settings
 	init() {
@@ -37,7 +38,9 @@ struct GameView: View {
             // Settings Sheet
 			if showSettings {
 				NavigationView {
-					SettingsView()
+					SettingsView(startNewGame: {
+						navigationPath.append("game")
+					})
 						.environmentObject(settingsViewModel)
 				}
 				.navigationViewStyle(StackNavigationViewStyle())

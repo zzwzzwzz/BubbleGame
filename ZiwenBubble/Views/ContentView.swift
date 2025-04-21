@@ -92,7 +92,10 @@ struct ContentView: View {
 				case "highScores":
 					HighScoreView()
 				case "settings":
-					SettingsView().environmentObject(settingsViewModel)
+					SettingsView(startNewGame: {
+						navigationPath.append("game")
+					})
+					.environmentObject(settingsViewModel)
 				case "game":
 					GameView().environmentObject(settingsViewModel)
 				default:

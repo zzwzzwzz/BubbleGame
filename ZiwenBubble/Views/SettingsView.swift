@@ -12,7 +12,7 @@ struct SettingsView: View {
 	@Environment(\.presentationMode) var presentationMode
 	@State private var showAlert = false
 	@State private var alertMessage = ""
-	@State private var navigateToGame: Bool = false
+	var startNewGame: () -> Void
 	
 	var body: some View {
 		Form {
@@ -96,13 +96,6 @@ struct SettingsView: View {
 				dismissButton: .default(Text("OK"))
 			)
 		}
-		.background(
-			NavigationLink(isActive: $navigateToGame) {
-				GameView().environmentObject(viewModel)
-			} label: {
-				EmptyView()
-			}
-		)
 	}
 	
 	// Validates settings before starting the game
@@ -128,13 +121,11 @@ struct SettingsView: View {
 			return
 		}
 		
-		// All settings are valid, save settings and start the game
-		viewModel.saveSettings()
-		navigateToGame = true
+		startNewGame()
 	}
 }
 
 #Preview {
-	SettingsView()
+	SettingsView(startNewGame: {})
 		.environmentObject(SettingsViewModel())
 }
