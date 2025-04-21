@@ -16,6 +16,7 @@ struct GameView: View {
 	@State private var showSettings = false
 	@State private var showPauseMenu = false
 	@State private var showHighScores = false
+	@State private var showGameRules = false
 	@EnvironmentObject var navigationManager: NavigationManager
 	
 	// Initializer with default settings
@@ -57,7 +58,12 @@ struct GameView: View {
             if showPauseMenu {
                 pauseMenu
             }
-            
+			
+			if showGameRules {
+				gameRulesView
+					.transition(.opacity)
+			}
+			
             // Game Over
 			if showHighScores {
 				HighScoreView(
@@ -225,9 +231,19 @@ struct GameView: View {
 					.foregroundColor(.orange)
 					.transition(.scale)
 			}
-			
 			Spacer()
 			
+			// Help/Info button (NEW)
+			Button(action: {
+				if viewModel.gameState == .playing {
+					viewModel.pauseGame()
+				}
+				showGameRules = true
+			}) {
+				Image(systemName: "questionmark.circle.fill")
+					.font(.system(size: 36))
+					.foregroundColor(.orange.opacity(0.8))
+			}
 		}
 		.padding()
 	}
@@ -285,23 +301,18 @@ struct GameView: View {
 						viewModel.resumeGame()
 						showPauseMenu = false
 					}
+					.buttonStyle(PrimaryButtonStyle())
 					Button("Restart") {
 						viewModel.resetGame()
 						viewModel.startGame()
 						showPauseMenu = false
 					}
+					.buttonStyle(PrimaryButtonStyle())
 					Button("Menu") {
 						navigationManager.popToRoot()
 					}
+					.buttonStyle(PrimaryButtonStyle())
 				}
-				.font(.title2)
-				.foregroundColor(.white)
-				.frame(maxWidth: .infinity, minHeight: 15)
-				.padding()
-				.background(
-					RoundedRectangle(cornerRadius: 20)
-						.fill(Color.white.opacity(0.2))
-				)
 			}
 			.padding()
 			.background(Color.gray)
@@ -310,6 +321,111 @@ struct GameView: View {
 			.frame(maxWidth: .infinity)
 		}
 		.zIndex(2)
+	}
+	
+	private var gameRulesView: some View {
+		ZStack {
+			// Background
+			Color.black.opacity(0.4)
+				.edgesIgnoringSafeArea(.all)
+			
+			// Content
+			VStack(spacing: 10) {
+				Text("Game Rules")
+					.font(.largeTitle)
+					.fontWeight(.bold)
+					.foregroundColor(.white)
+				
+				pointsTable
+				
+				comboRulesSection
+				
+				gameplayTipsSection
+				
+				dismissButton
+			}
+			.padding()
+			.background(Color.gray.opacity(0.8))
+			.cornerRadius(20)
+			.padding(.horizontal, 30)
+		}
+		.zIndex(2)
+	}
+
+	private var pointsTable: some View {
+		VStack(spacing: 10) {
+			Text("Points")
+				.font(.title3)
+				.fontWeight(.bold)
+				.foregroundColor(.white)
+				.padding(.bottom, 5)
+			
+			// Table Header
+			HStack {
+				Text("Color").frame(width: 80, alignment: .leading)
+				Text("Points").frame(width: 60, alignment: .center)
+				Text("Chance").frame(width: 80, alignment: .trailing)
+			}
+			.font(.headline)
+			.foregroundColor(.white)
+			
+			Divider().background(Color.white)
+			
+			// Table Rows
+			ForEach(bubbleData, id: \.color) { bubble in
+				HStack {
+					Circle()
+						.fill(bubble.color)
+						.frame(width: 20, height: 20)
+					Text(bubble.name).frame(width: 80, alignment: .leading)
+					Text("\(bubble.points)").frame(width: 60)
+					Text(bubble.probability).frame(width: 80)
+				}
+				.foregroundColor(.white)
+			}
+		}
+		.padding()
+		.background(Color.white.opacity(0.2))
+		.cornerRadius(15)
+	}
+
+	private var comboRulesSection: some View {
+		VStack(alignment: .leading, spacing: 8) {
+			Text("Combo")
+				.font(.title3)
+				.fontWeight(.bold)
+				.foregroundColor(.white)
+			
+			Text("• Consecutive same-color pops")
+			Text("• 1.5x multiplier after first bubble")
+		}
+		.frame(maxWidth: .infinity, alignment: .leading)
+		.foregroundColor(.white)
+	}
+
+	private var gameplayTipsSection: some View {
+		VStack(alignment: .leading, spacing: 8) {
+			Text("Tips")
+				.font(.title3)
+				.fontWeight(.bold)
+				.foregroundColor(.white)
+			
+			Text("• Tap bubbles quickly for combos")
+			Text("• Prioritize high-value bubbles")
+			Text("• Watch the timer!")
+		}
+		.frame(maxWidth: .infinity, alignment: .leading)
+		.foregroundColor(.white)
+	}
+
+	private var dismissButton: some View {
+		Button("Got it!") {
+			showGameRules = false
+			if viewModel.gameState == .paused {
+				viewModel.resumeGame()
+			}
+		}
+		.buttonStyle(PrimaryButtonStyle())
 	}
 	
 	// Initialize the game with current settings
@@ -333,42 +449,103 @@ struct GameView: View {
 	}
 }
 
+// Game Rule style
+struct PrimaryButtonStyle: ButtonStyle {
+	func makeBody(configuration: Configuration) -> some View {
+		configuration.label
+			.font(.title2.weight(.semibold))
+			.foregroundColor(.white)
+			.padding()
+			.frame(maxWidth: .infinity)
+			.background(
+				RoundedRectangle(cornerRadius: 15)
+					.fill(Color.orange.opacity(0.8))
+			)
+			.scaleEffect(configuration.isPressed ? 0.95 : 1)
+	}
+}
+
+private let bubbleData = [
+	BubbleInfo(color: .red, name: "Red", points: 1, probability: "40%"),
+	BubbleInfo(color: .pink, name: "Pink", points: 2, probability: "30%"),
+	BubbleInfo(color: .green, name: "Green", points: 5, probability: "15%"),
+	BubbleInfo(color: .blue, name: "Blue", points: 8, probability: "10%"),
+	BubbleInfo(color: .black, name: "Black", points: 10, probability: "5%")
+]
+
+struct BubbleInfo {
+	let color: Color
+	let name: String
+	let points: Int
+	let probability: String
+}
+
 // Bubble View
 struct BubbleView: View {
 	let bubble: Bubble
 	let isAnimating: Bool
 	
 	var body: some View {
+		let lighterColor = bubble.color.uiColor.opacity(0.7)
+		let gradient = RadialGradient(
+			gradient: Gradient(colors: [
+				.white.opacity(0.6),
+				lighterColor,
+				lighterColor.opacity(0.3)
+			]),
+			center: .topLeading,
+			startRadius: 0,
+			endRadius: 50
+		)
+		
 		Circle()
-			.fill(bubble.color.uiColor)
+			.fill(gradient)
 			.frame(width: bubble.size, height: bubble.size)
 			.overlay(
 				Circle()
-					.stroke(Color.white, lineWidth: 2)
+					.stroke(
+						LinearGradient(
+							gradient: Gradient(colors: [.white.opacity(0.5), .clear]),
+							startPoint: .topLeading,
+							endPoint: .bottomTrailing
+						),
+						lineWidth: 3
+					)
 			)
-			.shadow(color: .black.opacity(0.3), radius: 3, x: 1, y: 1)
+			.overlay( // Bubble highlight
+				Circle()
+					.trim(from: 0, to: 0.4)
+					.stroke(
+						LinearGradient(
+							gradient: Gradient(colors: [.white.opacity(0.8), .clear]),
+							startPoint: .topLeading,
+							endPoint: .bottomTrailing
+						),
+						lineWidth: 4
+					)
+					.rotationEffect(.degrees(-30))
+					.offset(x: bubble.size * 0.15, y: -bubble.size * 0.15)
+			)
+			.shadow(color: .blue.opacity(0.2), radius: 8, x: 2, y: 2)
+			.shadow(color: .black.opacity(0.1), radius: 3, x: -1, y: -1)
 			.scaleEffect(isAnimating ? 1.2 : 1.0)
 			.opacity(isAnimating ? 0 : 1.0)
 			.animation(.easeOut(duration: 0.3), value: isAnimating)
 			.overlay(
 				ZStack {
-					// Add visual effects for popped bubbles
 					if isAnimating {
 						Circle()
-							.stroke(bubble.color.uiColor, lineWidth: 2)
+							.stroke(lighterColor, lineWidth: 2)
 							.scaleEffect(1.5)
 							.opacity(0)
 							.animation(.easeOut(duration: 0.3), value: isAnimating)
 					}
-					
-					// Display points for high-value bubbles
-					if bubble.points >= 5 {
-						Text("\(bubble.points)")
-							.font(.system(size: bubble.size * 0.4))
-							.foregroundColor(.white)
-							.fontWeight(.bold)
-					}
 				}
+			)
+			.scaleEffect(isAnimating ? 1.2 : 1.0)
+			.animation(
+				.easeInOut(duration: 1.5).repeatForever(autoreverses: true),
+				value: isAnimating
 			)
 	}
 }
