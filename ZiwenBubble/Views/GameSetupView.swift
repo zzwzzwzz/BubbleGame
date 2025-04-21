@@ -9,6 +9,7 @@ import SwiftUI
 
 struct GameSetupView: View {
 	@EnvironmentObject var settingsViewModel: SettingsViewModel
+	@EnvironmentObject var navigationManager: NavigationManager
 	@Environment(\.presentationMode) var presentationMode
 	@State private var showAlert = false
 	@State private var alertMessage = ""
@@ -75,8 +76,8 @@ struct GameSetupView: View {
 			}
 			
 			Section {
-				Button("Back") {
-					presentationMode.wrappedValue.dismiss()
+				Button("Back to Menu") {
+					navigationManager.popToRoot()
 				}
 				.frame(maxWidth: .infinity)
 			}

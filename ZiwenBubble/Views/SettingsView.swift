@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SettingsView: View {
 	@EnvironmentObject var viewModel: SettingsViewModel
+	@EnvironmentObject var navigationManager: NavigationManager
 	@Environment(\.presentationMode) var presentationMode
 	@State private var showAlert = false
 	@State private var alertMessage = ""
@@ -81,7 +82,13 @@ struct SettingsView: View {
 			
 			Section {
 				Button("Back to Menu") {
-					presentationMode.wrappedValue.dismiss()
+					// Simply dismiss if we're in a sheet
+					if presentationMode.wrappedValue.isPresented {
+						presentationMode.wrappedValue.dismiss()
+					} else {
+						// Use navigation manager to pop to root otherwise
+						navigationManager.popToRoot()
+					}
 				}
 				.frame(maxWidth: .infinity)
 			}

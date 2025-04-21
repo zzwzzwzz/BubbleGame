@@ -16,8 +16,8 @@ struct GameView: View {
 	@State private var showSettings = false
 	@State private var showPauseMenu = false
 	@State private var showHighScores = false
-	@State private var navigationPath = NavigationPath()
-		
+	@EnvironmentObject var navigationManager: NavigationManager
+	
 	// Initializer with default settings
 	init() {
 		let settings = SettingsModel(
@@ -39,7 +39,7 @@ struct GameView: View {
 			if showSettings {
 				NavigationView {
 					SettingsView(startNewGame: {
-						navigationPath.append("game")
+						navigationManager.path.append("game")
 					})
 						.environmentObject(settingsViewModel)
 				}
@@ -286,7 +286,7 @@ struct GameView: View {
 						showPauseMenu = false
 					}
 					Button("Menu") {
-						presentationMode.wrappedValue.dismiss()
+						navigationManager.popToRoot()
 					}
 				}
 				.font(.title2)

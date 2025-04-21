@@ -12,6 +12,7 @@ struct HighScoreView: View {
 	@State private var scores: [GameScore] = []
 	@State private var isAnimating = false
 	@Environment(\.presentationMode) var presentationMode
+	@EnvironmentObject var navigationManager: NavigationManager
 	private let scoreManager = ScoreManager()
 	
 	// Current player info
@@ -57,7 +58,7 @@ struct HighScoreView: View {
 				// Buttons
 				HStack(spacing: 20) {
 					Button(action: {
-						presentationMode.wrappedValue.dismiss()
+						navigationManager.popToRoot()
 					}) {
 						Text("Menu")
 							.font(.title2)

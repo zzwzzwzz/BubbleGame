@@ -13,10 +13,10 @@ struct ContentView: View {
 	@State private var isLandscape: Bool = false
 	@State private var showGameSetup: Bool = false
 	@State private var navigateToGame: Bool = false
-	@State private var navigationPath = NavigationPath()
+	@StateObject private var navigationManager = NavigationManager()
 	
 	var body: some View {
-		NavigationStack (path: $navigationPath) {
+		NavigationStack (path: $navigationManager.path) {
 			ZStack {
 				// Background elements
 				BubbleBackgroundView()
@@ -41,19 +41,19 @@ struct ContentView: View {
 						VStack(spacing: isLandscape ? 25 : 40) {
 							// New Game Button
 							Button {
-								navigationPath.append("gameSetup")
+								navigationManager.path.append("gameSetup")
 							} label: {
 								ButtonView(title: "New Game", icon: "play.circle.fill", color: .orange)
 							}
 
 							Button {
-								navigationPath.append("highScores")
+								navigationManager.path.append("highScores")
 							} label: {
 								ButtonView(title: "High Scores", icon: "star.fill", color: .brown)
 							}
 							
 							Button {
-								navigationPath.append("settings")
+								navigationManager.path.append("settings")
 							} label: {
 								ButtonView(title: "Settings", icon: "gear", color: .gray)
 							}
@@ -87,23 +87,34 @@ struct ContentView: View {
 				switch destination {
 				case "gameSetup":
 					GameSetupView(onStartGame: {
-						navigationPath.append("game")
+						navigationManager.path.append("game")
 					}).environmentObject(settingsViewModel)
 				case "highScores":
 					HighScoreView()
+						.environmentObject(navigationManager)
 				case "settings":
 					SettingsView(startNewGame: {
-						navigationPath.append("game")
+						navigationManager.path.append("game")
 					})
 					.environmentObject(settingsViewModel)
+					.environmentObject(navigationManager)
 				case "game":
 					GameView().environmentObject(settingsViewModel)
+						.environmentObject(navigationManager)
 				default:
 					EmptyView()
 				}
 			}
 		}
+		.environmentObject(navigationManager)
 		.environmentObject(settingsViewModel)
+		.onReceive(navigationManager.$shouldPopToRoot) { shouldPop in
+			if shouldPop {
+				// Handle dismissal of any presented sheets
+				showGameSetup = false
+				navigateToGame = false
+			}
+		}
 	}
 }
 
